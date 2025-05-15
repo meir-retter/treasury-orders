@@ -12,7 +12,9 @@ Then,
 ./scripts/run.sh
 ```
 
-to run it. Then open `http://0.0.0.0:8279/` in a browser. The app may take 10-15 seconds to load the first time because of docker -- refreshes should be fast.
+to run it.
+
+Open `http://0.0.0.0:8279/` in a browser. The app may take 10-15 seconds to load the first time because of docker -- refreshes should be fast.
 
 Notes:
 - The app uses sqlite to persist the user's orders. Sqlite is lightweight and suitable for a single user in an app like this, but if this was a production app hosted online and there were multiple users and this was hosted online, I'd
