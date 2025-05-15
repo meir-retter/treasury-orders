@@ -1,0 +1,22 @@
+.red-slider .rc-slider-track {
+    background-color: transparent;
+}
+
+.red-slider .rc-slider-handle {
+    border-color: red;
+    background-color: red;
+}
+
+.red-slider .rc-slider-rail {
+    background-color: red;
+}
+
+.red-slider .rc-slider-dot {
+    border-color: #ffe5e5;
+    background-color: #ffe5e5;
+}
+
+.red-slider .rc-slider-dot-active {
+    border-color: #ffe5e5;
+    background-color: #ffe5e5;
+}

@@ -2,6 +2,7 @@ from dash import Dash, dash_table, dcc, html
 from dash.dependencies import Input, Output, State
 
 from datetime import datetime
+from collections import defaultdict
 import plotly.graph_objs as go
 
 import sqlite3
@@ -12,7 +13,7 @@ from download import (
     refresh_data_for_new_year,
     get_most_recent_year_with_data_stored,
     refresh_data_for_new_weekday,
-    get_data,
+    get_stored_data,
 )
 
 
@@ -31,6 +32,7 @@ def make_human_readable(order):
         "ts": format_timestamp(order["ts"]),
     }
 
+
 def table_format(rows):
     return [
         make_human_readable({"trm": row[0], "amt": row[1], "yld": row[2], "ts": row[3]})
@@ -44,14 +46,33 @@ most_recent_year_with_data = get_most_recent_year_with_data_stored()
 # will usually be the current year, but could be the previous year e.g. if it's Saturday Jan 1
 
 refresh_data_for_new_weekday(most_recent_year_with_data)
-data = get_data(most_recent_year_with_data)
+data = get_stored_data(most_recent_year_with_data)
 
 first_line, second_line = data[:2]
 terms = [col.replace("onth", "o") for col in first_line[1:]]
 date_value, yields = second_line[0], [float(val) for val in second_line[1:]]
 
+# from download import download_csv_and_write_to_file
+# for y in range(1990, 2025):
+#     download_csv_and_write_to_file(y)
+#     print(y, "done")
 
-def create_graph():
+all_data = defaultdict(lambda: {"dates": [], "yields": []})
+for year in range(1990, 2026):
+    dt = get_stored_data(year)
+    cols = [col.replace("onth", "o") for col in dt[0]]
+    for i in reversed(range(1, len(dt))):
+        row = dt[i]
+        row_date = row[0]
+        for j in range(1, len(row)):
+            term = cols[j]
+            yield_value = float(row[j]) if row[j] else None
+            if yield_value is not None:
+                all_data[term]["dates"].append(datetime.strptime(row_date, "%m/%d/%Y"))
+                all_data[term]["yields"].append(yield_value)
+
+
+def create_yield_curve_graph():
     fig = go.Figure(data=[])
     fig.add_trace(
         go.Scatter(
@@ -59,7 +80,7 @@ def create_graph():
             y=yields,
             mode="lines",
             name=date_value,
-            line=dict(color="blue"),
+            line=dict(color="black"),
         )
     )
     # fig.add_trace(
@@ -74,7 +95,7 @@ def create_graph():
     fig.update_layout(
         xaxis_title="Maturity Term",
         yaxis_title="Yield",
-        title="Treasury Yield Curve",
+        title="Current Treasury Yield Curve",
         yaxis={"ticksuffix": "%"},
         showlegend=True,
     )
@@ -83,17 +104,71 @@ def create_graph():
     return fig
 
 
-
-
-
-
+def create_term_yield_history_graph(term):
+    fig = go.Figure(data=[])
+    fig.add_trace(
+        go.Scatter(
+            x=all_data[term]["dates"],
+            y=all_data[term]["yields"],
+            mode="lines",
+            name=term,
+            line=dict(color="black"),
+        )
+    )
+    # fig.add_trace(
+    #     go.Scatter(
+    #         x=cols,
+    #         y=yield_vals2,
+    #         mode="lines",
+    #         name=date_val2,
+    #         line=dict(color="red"),
+    #     )
+    # )
+    fig.update_layout(
+        xaxis_title="Time",
+        yaxis_title="Yield",
+        title=f"<span style='color:red; font-weight:bold'>{term}</span> yield, historically",
+        yaxis={"ticksuffix": "%"},
+    )
+    # fig.data = [fig.data[0]]
+    # fig.show()
+    return fig
 
 
 def get_layout():
     return html.Div(
         [
             html.Div(
-                dcc.Graph(id="graph", figure=create_graph()), style={"maxWidth": "50vw"}
+                [
+                    html.Div(
+                        dcc.Graph(id="graph", figure=create_yield_curve_graph()),
+                        style={"width": "50%", "padding": "10px"},
+                    ),
+                    html.Div(
+                        [
+                            dcc.Graph(id="term-yield-history-graph"),
+                            dcc.Slider(
+                                min=0,
+                                max=len(terms) - 1,
+                                step=None,
+                                marks={i: term for i, term in enumerate(terms)},
+                                value=0,
+                                id="term-yield-history-slider",
+                                tooltip={"always_visible": False, "placement": "bottom"},
+                                updatemode="drag",
+                                className="red-slider"
+                            ),
+                        ],
+                        style={"width": "50%", "padding": "10px", "fontFamily": "Verdana"},
+                    ),
+                ],
+                style={
+                    "display": "flex",
+                    "flexDirection": "row",
+                    "justifyContent": "space-between",
+                    "alignItems": "flex-start",
+                    "width": "100%",
+                },
             ),
             html.Br(),
             html.Label("Create order:", style=LABEL_STYLE),
@@ -146,8 +221,17 @@ def get_layout():
         ]
     )
 
+
 app = Dash(__name__)
 app.layout = get_layout
+
+
+@app.callback(
+    Output("term-yield-history-graph", "figure"),
+    Input("term-yield-history-slider", "value"),
+)
+def update_term_history_graph(slider_index):
+    return create_term_yield_history_graph(terms[slider_index])
 
 
 @app.callback(
