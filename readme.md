@@ -24,12 +24,10 @@ Notes:
 - I used GPT for
   1. speeding up bugfixing
   2. Plotly Dash aesthetic improvement (css styling, getting the components aligned etc)
+  3. Suggesting a potential name for this app -- my favorite was "YieldStation".
 
-
-I also asked GPT to suggest names for this app -- my favorite was "YieldStation".
-
-- More exception handling, type hints, and tests could be added. Also the db logic could be separated out better. But I estimated that my time spent was past 6 hours, so those would have to be done as a follow-up.
+- More exception handling, type hints, and tests could be added. Also, the db logic could be separated out better. But I estimated that my time spent was past 6 hours, so those would have to be done as a follow-up.
 
 Potential improvements:
-- Show the current yield curve against other days' yield curves
+- Show the current yield curve against other dates' yield curves
 - Show the projected value of the user's orders after they get their money back (factoring in payments and the yield rate)
