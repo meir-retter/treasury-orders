@@ -12,7 +12,7 @@ Then,
 ./scripts/run.sh
 ```
 
-to run it. Then open `http://0.0.0.0:8279/` in a browser. The app may take 10-15 seconds to load the first time -- refreshes should be fast.
+to run it. Then open `http://0.0.0.0:8279/` in a browser. The app may take 10-15 seconds to load the first time because of docker -- refreshes should be fast.
 
 Notes:
 - The app uses sqlite to persist the user's orders. Sqlite is lightweight and suitable for a single user in an app like this, but if this was a production app hosted online and there were multiple users and this was hosted online, I'd
@@ -31,4 +31,3 @@ I also asked GPT to suggest names for this app -- my favorite was "YieldStation"
 Potential improvements:
 - Show the current yield curve against other days' yield curves
 - Show the projected value of the user's orders after they get their money back (factoring in payments and the yield rate)
-- Make it load faster at the start
