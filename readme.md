@@ -18,8 +18,13 @@ Notes:
 - The app uses sqlite to persist the user's orders. Sqlite is lightweight and suitable for a single user in an app like this, but if this was a production app hosted online and there were multiple users and this was hosted online, I'd
   1. use Postgres instead, and
   2. need an additional column for username, need auth, etc
-- All the historical yield data is read from files every time. This is okay because their small size means it's very quick, but with larger amounts of data it wouldn't be good
+- All the historical yield data is read from files every time. These files are stored in the repo along with the code. This is okay because their small size means it's very quick to read and doesn't take up much space
+- I used GPT for
+  1. speeding up bugfixing
+  2. Plotly Dash aesthetic improvement (css styling, getting the components aligned etc)
 
+I also asked GPT to suggest names for this app -- my favorite was "YieldStation".
 
 Potential improvements:
-- Could be nice to show the current yield curve against other days' yield curves
+- Show the current yield curve against other days' yield curves
+- Show the projected value of the user's orders after they get their money back (factoring in payments and the yield rate)

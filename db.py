@@ -1,16 +1,22 @@
 import sqlite3
 
+DB_NAME = "treasury_rates.db"
 
 def get_orders_from_db():
-    conn = sqlite3.connect("treasury_rates.db")
-    cur = conn.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS orders(term, amount, yield, timestamp)")
-    res = cur.execute(
-        "SELECT term, amount, yield, timestamp FROM orders ORDER BY timestamp DESC"
-    )
-    rows = res.fetchall()
-    conn.close()
-    return rows
+    with sqlite3.connect(DB_NAME) as conn:
+        cur = conn.cursor()
+        cur.execute(
+            """CREATE TABLE IF NOT EXISTS orders (
+                term TEXT,
+                amount REAL,
+                yield_value REAL,
+                timestamp TEXT
+            )"""
+        )
+        res = cur.execute(
+            "SELECT term, amount, yield_value, timestamp FROM orders ORDER BY timestamp DESC"
+        )
+        return res.fetchall()
 
 
 def insert_order(conn, term, amount, yld, timestamp):

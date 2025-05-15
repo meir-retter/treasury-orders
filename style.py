@@ -6,7 +6,7 @@ COMMON_STYLE = {
     "borderRadius": "4px",
     "width": "150px",
     "height": "40px",
-    "marginRight": "10px",
+    "marginRight": "0px",
     "cursor": "text",
 }
 
@@ -15,7 +15,16 @@ LABEL_STYLE = {
     "fontSize": "18px",
     "fontFamily": "Verdana",
     "fontWeight": "bold",
-    "marginBottom": "5px",
+    "marginBottom": "8px",
+    "display": "block",
+}
+
+SMALL_LABEL_STYLE = {
+    "padding": "0px",
+    "fontSize": "12px",
+    "fontFamily": "Verdana",
+    "fontWeight": "bold",
+    "marginBottom": "3px",
     "display": "block",
 }
 
