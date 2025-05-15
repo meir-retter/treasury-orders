@@ -1,4 +1,4 @@
-From within `treasury_orders/`, run:
+First `cd` into `treasury-orders/`. Then run:
 
 ```
 ./scripts/build.sh
