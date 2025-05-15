@@ -6,6 +6,7 @@ from collections import defaultdict
 import plotly.graph_objs as go
 
 from functools import lru_cache
+from typing import Tuple, List, Dict, Any
 
 import sqlite3
 
@@ -146,4 +147,4 @@ def place_order(n_clicks, selected_term, amount, rows, extra_data1):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8279)
+    app.run(debug=False, host="0.0.0.0", port=8279)
