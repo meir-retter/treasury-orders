@@ -22,6 +22,7 @@ Notes:
 - I used GPT for
   1. speeding up bugfixing
   2. Plotly Dash aesthetic improvement (css styling, getting the components aligned etc)
+- There are definitely plenty of places I could add exception handling
 
 I also asked GPT to suggest names for this app -- my favorite was "YieldStation".
 

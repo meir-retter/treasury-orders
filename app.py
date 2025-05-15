@@ -5,6 +5,8 @@ from datetime import datetime
 from collections import defaultdict
 import plotly.graph_objs as go
 
+from functools import lru_cache
+
 import sqlite3
 
 from style import COMMON_STYLE, LABEL_STYLE, SMALL_LABEL_STYLE, BUTTON_STYLE
@@ -15,31 +17,17 @@ from download import (
     refresh_data_for_new_weekday,
     get_stored_data,
 )
+from build_layout import (
+    create_yield_curve_graph,
+    create_term_yield_history_graph,
+    build_graphs_section,
+    build_place_order_section,
+    build_orders_table_section,
+    make_human_readable,
+)
 
 
-def format_timestamp(ts_str):
-    try:
-        return datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S").strftime("%Y-%m-%d %H:%M")
-    except Exception:
-        return ts_str
-
-
-def make_human_readable(order):
-    return {
-        "trm": order["trm"],
-        "amt": f"${order['amt']:,.2f}" if order["amt"] is not None else "N/A",
-        "yld": f"{round(order['yld'], 2)}%" if order["yld"] is not None else "N/A",
-        "ts": format_timestamp(order["ts"]),
-    }
-
-
-def table_format(rows):
-    return [
-        make_human_readable({"trm": row[0], "amt": row[1], "yld": row[2], "ts": row[3]})
-        for row in rows
-    ]
-
-
+@lru_cache(maxsize=1)
 def get_current_yield_curve_data():
     refresh_data_for_new_year()
 
@@ -61,6 +49,7 @@ def get_current_yield_curve_data():
 #     print(y, "done")
 
 
+@lru_cache(maxsize=1)
 def get_all_data():
     all_data = defaultdict(lambda: {"dates": [], "yields": []})
     for year in range(1990, 2026):
@@ -80,182 +69,23 @@ def get_all_data():
     return all_data
 
 
-date_value, terms, yields = get_current_yield_curve_data()
-all_data = get_all_data()
-
-
-def create_yield_curve_graph():
-    fig = go.Figure(data=[])
-    fig.add_trace(
-        go.Scatter(
-            x=terms,
-            y=yields,
-            mode="lines",
-            name=date_value,
-            line=dict(color="black"),
-        )
-    )
-    fig.update_layout(
-        xaxis_title="Maturity Term",
-        yaxis_title="Yield",
-        title=f"Treasury Yield Curve {date_value}",
-        yaxis={"ticksuffix": "%"},
-    )
-    return fig
-
-
-def create_term_yield_history_graph(term):
-    fig = go.Figure(data=[])
-    fig.add_trace(
-        go.Scatter(
-            x=all_data[term]["dates"],
-            y=all_data[term]["yields"],
-            mode="lines",
-            name=term,
-            line=dict(color="black"),
-        )
-    )
-    fig.update_layout(
-        xaxis_title="Time",
-        yaxis_title="Yield",
-        title=f"Yield for maturity term of <span style='color:red; font-weight:bold'>{term}</span>, historically",
-        yaxis={"ticksuffix": "%"},
-    )
-    return fig
-
-
-def build_graphs_section():
-    return html.Div(
-        [
-            html.Div(
-                dcc.Graph(id="graph", figure=create_yield_curve_graph()),
-                style={"width": "50%", "padding": "10px"},
-            ),
-            html.Div(
-                [
-                    dcc.Graph(id="term-yield-history-graph"),
-                    dcc.Slider(
-                        min=0,
-                        max=len(terms) - 1,
-                        step=None,
-                        marks={i: term for i, term in enumerate(terms)},
-                        value=0,
-                        id="term-yield-history-slider",
-                        tooltip={"always_visible": False},
-                        updatemode="drag",
-                        className="red-slider",
-                    ),
-                ],
-                style={
-                    "width": "50%",
-                    "padding": "10px",
-                    "fontFamily": "Verdana",
-                },
-            ),
-        ],
-        style={
-            "display": "flex",
-            "flexDirection": "row",
-            "justifyContent": "space-between",
-            "alignItems": "flex-start",
-            "width": "100%",
-        },
-    )
-
-def build_place_order_section():
-    return html.Div(
-        [
-            html.Div(
-                [
-                    html.Label("Term:", style=SMALL_LABEL_STYLE),
-                    dcc.Dropdown(
-                        terms, "1 Mo", id="term-dropdown", style=COMMON_STYLE
-                    ),
-                ],
-                style={
-                    "display": "flex",
-                    "flexDirection": "column",
-                    "marginRight": "20px",
-                },
-            ),
-            html.Div(
-                [
-                    html.Label("Amount (Dollars):", style=SMALL_LABEL_STYLE),
-                    dcc.Input(
-                        id="amount-input",
-                        type="number",
-                        value=100.00,
-                        min=0,
-                        max=10**6,
-                        step=0.01,
-                        style=COMMON_STYLE,
-                    ),
-                ],
-                style={
-                    "display": "flex",
-                    "flexDirection": "column",
-                    "marginRight": "20px",
-                },
-            ),
-            html.Div(
-                [
-                    html.Label(
-                        " ", style=SMALL_LABEL_STYLE
-                    ),  # this is just so the alignment is correct
-                    html.Button(
-                        "Place order",
-                        id="place-order-button",
-                        n_clicks=0,
-                        style=BUTTON_STYLE,
-                    ),
-                ],
-                style={"display": "flex", "flexDirection": "column"},
-            ),
-        ],
-        style={
-            "display": "flex",
-            "alignItems": "flex-end",
-            "marginBottom": "10px",
-        }
-    )
-
-
-def build_orders_table_section():
-    return dash_table.DataTable(
-        id="table",
-        columns=[
-            {"name": "Term", "id": "trm"},
-            {"name": "Amount", "id": "amt"},
-            {"name": "Yield", "id": "yld"},
-            {"name": "Order time", "id": "ts"},
-        ],
-        data=table_format(
-            get_orders_from_db()
-        ),
-        style_table={"maxWidth": "60vw", "overflowX": "auto"},
-        style_cell={
-            "textAlign": "left",
-            "fontFamily": "Verdana",
-            "fontSize": 16,
-            "width": "25%",
-            "minWidth": "25%",
-            "maxWidth": "25%",
-        },
-        editable=False,
-        row_deletable=False,
-    )
-
-
 def get_layout():
+    date_value, terms, yields = get_current_yield_curve_data()
+    all_data = get_all_data()
     return html.Div(
         [
-            build_graphs_section(),
+            dcc.Store(
+                id="graph-1-store",
+                data={"date_value": date_value, "terms": terms, "yields": yields},
+            ),
+            dcc.Store(id="graph-2-store", data={"all_data": all_data}),
+            build_graphs_section(date_value, terms, yields),
             html.Br(),
             html.Label("Create order:", style=LABEL_STYLE),
-            build_place_order_section(),
+            build_place_order_section(terms),
             html.Br(),
             html.Label("Previous orders:", style=LABEL_STYLE),
-            build_orders_table_section()
+            build_orders_table_section(),
         ]
     )
 
@@ -267,9 +97,13 @@ app.layout = get_layout
 @app.callback(
     Output("term-yield-history-graph", "figure"),
     Input("term-yield-history-slider", "value"),
+    State("graph-1-store", "data"),
+    State("graph-2-store", "data"),
 )
-def update_term_history_graph(slider_index):
-    return create_term_yield_history_graph(terms[slider_index])
+def update_term_history_graph(slider_index, extra_data1, extra_data2):
+    return create_term_yield_history_graph(
+        extra_data1["terms"][slider_index], extra_data2["all_data"]
+    )
 
 
 @app.callback(
@@ -278,8 +112,11 @@ def update_term_history_graph(slider_index):
     State("term-dropdown", "value"),
     State("amount-input", "value"),
     State("table", "data"),
+    State("graph-1-store", "data"),
 )
-def place_order(n_clicks, selected_term, amount, rows):
+def place_order(n_clicks, selected_term, amount, rows, extra_data1):
+    terms = extra_data1["terms"]
+    yields = extra_data1["yields"]
     if n_clicks > 0 and selected_term in terms:
         try:
             idx = terms.index(selected_term)
@@ -299,7 +136,11 @@ def place_order(n_clicks, selected_term, amount, rows):
         # need to open a new connection within this thread.
         with sqlite3.connect(DB_NAME) as conn:
             insert_order(
-                conn, new_order["trm"], new_order["amt"], new_order["yld"], new_order["ts"]
+                conn,
+                new_order["trm"],
+                new_order["amt"],
+                new_order["yld"],
+                new_order["ts"],
             )
     return rows
 

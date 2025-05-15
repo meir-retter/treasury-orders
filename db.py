@@ -2,6 +2,7 @@ import sqlite3
 
 DB_NAME = "treasury_rates.db"
 
+
 def get_orders_from_db():
     with sqlite3.connect(DB_NAME) as conn:
         cur = conn.cursor()

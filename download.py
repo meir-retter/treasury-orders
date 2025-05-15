@@ -1,52 +1,67 @@
 import csv
 import requests
 from datetime import datetime, timedelta
+from pathlib import Path
 import os
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+
+DATA_DIR = Path("./data")
+BASE_URL = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv"
+
+
+def ensure_data_dir():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_csv_download_url(year: int):
-    return f"https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{year}/all?field_tdr_date_value={year}&type=daily_treasury_yield_curve&page&_format=csv"
+    return f"{BASE_URL}/{year}/all?field_tdr_date_value={year}&type=daily_treasury_yield_curve&page&_format=csv"
 
 
-def get_most_recent_weekday():
+def get_most_recent_weekday() -> datetime:
     today = datetime.today()
-    weekday = today.weekday()
-    if weekday == 5:
-        delta = timedelta(days=1)
-    elif weekday == 6:
-        delta = timedelta(days=2)
-    else:
-        delta = timedelta(days=0)
-    return today - delta
+    if today.weekday() == 5:  # Saturday
+        return today - timedelta(days=1)
+    elif today.weekday() == 6:  # Sunday
+        return today - timedelta(days=2)
+    return today
 
 
 def download_csv_and_write_to_file(year: int):
-    with requests.Session() as s:
-        download = s.get(get_csv_download_url(year))
-        decoded_content = download.content.decode("utf-8")
-        if len(decoded_content) > 0:
-            with open(f"./data/{year}.csv", "w") as f:
-                f.write(decoded_content)
+    ensure_data_dir()
+    try:
+        with requests.Session() as s:
+            download = s.get(get_csv_download_url(year))
+            download.raise_for_status()
+            decoded_content = download.content.decode("utf-8")
+            if len(decoded_content) > 0:
+                with open(DATA_DIR / f"{year}.csv", "w") as f:
+                    f.write(decoded_content)
+    except Exception as e:
+        logger.error(f"ERROR, failed to download data for {year}: {e}")
 
 
 def refresh_data_for_new_year():
     current_year = datetime.now().year
-    if f"{current_year}.csv" not in os.listdir("./data/"):
+    if f"{current_year}.csv" not in os.listdir(DATA_DIR):
         try:
             download_csv_and_write_to_file(current_year)
         except Exception as e:
-            print("Error:", e)
+            logger.error("Error:", e)
 
 
 def get_stored_data(year):
-    with open(f"./data/{year}.csv", "r") as file:
+    with open(DATA_DIR / f"{year}.csv", "r") as file:
         reader = csv.reader(file)
         lines = [line for line in reader]  # small file, fine to read into memory
     return lines
 
 
 def get_most_recent_year_with_data_stored():
-    return max(int(filename.removesuffix(".csv")) for filename in os.listdir("./data/"))
+    return max(int(filename.removesuffix(".csv")) for filename in os.listdir(DATA_DIR))
 
 
 def refresh_data_for_new_weekday(year):
