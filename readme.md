@@ -1,0 +1,1 @@
+- If there were multiple users and this was hosted online, I'd use Postgres and have a column for username
