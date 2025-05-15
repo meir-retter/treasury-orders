@@ -22,9 +22,11 @@ Notes:
 - I used GPT for
   1. speeding up bugfixing
   2. Plotly Dash aesthetic improvement (css styling, getting the components aligned etc)
-- There are definitely plenty of places I could add exception handling
+
 
 I also asked GPT to suggest names for this app -- my favorite was "YieldStation".
+
+- More exception handling, type hints, and tests could be added. But I estimated that my time spent was past 6 hours, so those would have to be done as a follow-up.
 
 Potential improvements:
 - Show the current yield curve against other days' yield curves

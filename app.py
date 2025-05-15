@@ -28,7 +28,7 @@ from build_layout import (
 
 
 @lru_cache(maxsize=1)
-def get_current_yield_curve_data():
+def get_current_yield_curve_data() -> Tuple[str, List[str], List[float]]:
     refresh_data_for_new_year()
 
     most_recent_year_with_data = get_most_recent_year_with_data_stored()
@@ -50,7 +50,7 @@ def get_current_yield_curve_data():
 
 
 @lru_cache(maxsize=1)
-def get_all_data():
+def get_all_data() -> Dict[str, Dict[str, List[Any]]]:
     all_data = defaultdict(lambda: {"dates": [], "yields": []})
     for year in range(1990, 2026):
         year_data = get_stored_data(year)
