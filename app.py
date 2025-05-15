@@ -132,7 +132,7 @@ def place_order(n_clicks, selected_term, amount, rows, extra_data1):
         }
         rows.insert(0, make_human_readable(new_order))
 
-        # global conn doesnt work within dash component thread
+        # global conn doesn't work within dash component thread
         # need to open a new connection within this thread.
         with sqlite3.connect(DB_NAME) as conn:
             insert_order(
