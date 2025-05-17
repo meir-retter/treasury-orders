@@ -5,8 +5,8 @@ from style import COMMON_STYLE, LABEL_STYLE, SMALL_LABEL_STYLE, BUTTON_STYLE
 from datetime import datetime
 from typing import NamedTuple, Dict
 
-from db import get_orders_from_db
-from utils import Order, YieldCurve
+from db import read_db_orders
+from utils import Order, YieldCurve, YieldHistory
 
 
 def create_yield_curve_graph(yield_curve: YieldCurve):
@@ -30,12 +30,12 @@ def create_yield_curve_graph(yield_curve: YieldCurve):
     return fig
 
 
-def create_term_yield_history_graph(term, all_data):
+def create_term_yield_history_graph(term: str, yield_history: YieldHistory):
     fig = go.Figure(data=[])
     fig.add_trace(
         go.Scatter(
-            x=all_data[term]["dates"],
-            y=[yld / 100 for yld in all_data[term]["yields"]],
+            x=yield_history.dates,
+            y=[yld / 100 for yld in yield_history.yields],
             mode="lines",
             name=term,
             line=dict(color="black"),
@@ -157,7 +157,7 @@ def build_orders_table_section():
             {"name": "Yield", "id": "yield_basis_points"},
             {"name": "Order time", "id": "timestamp"},
         ],
-        data=[order.to_table_row() for order in get_orders_from_db()],
+        data=[order.to_table_row() for order in read_db_orders()],
         style_table={"maxWidth": "60vw", "overflowX": "auto"},
         style_cell={
             "textAlign": "left",

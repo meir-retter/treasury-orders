@@ -28,18 +28,18 @@ from build_layout import (
     build_orders_table_section,
 )
 
-from utils import Order, YieldCurve, deci_string
+from utils import Order, YieldCurve, YieldHistory, deci_string
 
 
 @lru_cache(maxsize=1)
-def get_current_yield_curve_data() -> YieldCurve:
+def get_current_yield_curve() -> YieldCurve:
     refresh_data_for_new_year()
 
-    most_recent_year_with_data = get_most_recent_year_with_data_stored()
+    year_now: int = get_most_recent_year_with_data_stored()
     # will usually be the current year, but could be the previous year e.g. if it's Saturday Jan 1
 
-    refresh_data_for_new_weekday(most_recent_year_with_data)
-    data = get_stored_data(most_recent_year_with_data)
+    refresh_data_for_new_weekday(year_now)
+    data = get_stored_data(year_now)
 
     first_line, second_line = data[:2]
     terms = [col.replace("onth", "o") for col in first_line[1:]]
@@ -56,8 +56,8 @@ def get_current_yield_curve_data() -> YieldCurve:
 
 
 @lru_cache(maxsize=1)
-def get_all_data() -> Dict[str, Dict[str, List[Any]]]:
-    all_data = defaultdict(lambda: {"dates": [], "yields": []})
+def get_yield_histories_by_term() -> Dict[str, YieldHistory]:
+    yield_histories_by_term = defaultdict(lambda: YieldHistory([], []))
     for year in range(1990, 2026):
         year_data = get_stored_data(year)
         cols = [col.replace("onth", "o") for col in year_data[0]]
@@ -68,23 +68,23 @@ def get_all_data() -> Dict[str, Dict[str, List[Any]]]:
                 term = cols[j]
                 yield_value = int(row[j].replace(".", "")) if row[j] else None
                 if yield_value is not None:
-                    all_data[term]["dates"].append(
-                        datetime.strptime(row_date, "%m/%d/%Y")
+                    yield_histories_by_term[term].add_data_point(
+                        datetime.strptime(row_date, "%m/%d/%Y"),
+                        yield_value
                     )
-                    all_data[term]["yields"].append(yield_value)
-    return all_data
+    return yield_histories_by_term
 
 
 def get_layout():
-    yield_curve = get_current_yield_curve_data()
-    all_data = get_all_data()
+    yield_curve = get_current_yield_curve()
+    yield_histories_by_term = get_yield_histories_by_term()
     return html.Div(
         [
             dcc.Store(
                 id="graph-1-store",
                 data=dataclasses.asdict(yield_curve),
             ),
-            dcc.Store(id="graph-2-store", data={"all_data": all_data}),
+            dcc.Store(id="graph-2-store", data={k: v.to_dict() for k, v in yield_histories_by_term.items()}),
             build_graphs_section(yield_curve),
             html.Br(),
             html.Label("Create order:", style=LABEL_STYLE),
@@ -107,8 +107,9 @@ app.layout = get_layout
     State("graph-2-store", "data"),
 )
 def update_term_history_graph(slider_index, extra_data1, extra_data2):
+    term = extra_data1["terms"][slider_index]
     return create_term_yield_history_graph(
-        extra_data1["terms"][slider_index], extra_data2["all_data"]
+        term, YieldHistory.from_dict(extra_data2[term])
     )
 
 

@@ -1,4 +1,5 @@
 import csv
+from typing import List
 import requests
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -30,34 +31,39 @@ def get_most_recent_weekday() -> datetime:
     return today
 
 
-def download_csv_and_write_to_file(year: int):
+def download_par_yield_csv(year: int) -> str:
     ensure_data_dir()
     try:
         with requests.Session() as s:
             download = s.get(get_csv_download_url(year))
             download.raise_for_status()
-            decoded_content = download.content.decode("utf-8")
-            if len(decoded_content) > 0:
-                with open(DATA_DIR / f"{year}.csv", "w") as f:
-                    f.write(decoded_content)
+            file_text: str = download.content.decode("utf-8")
+            return file_text
     except Exception as e:
         logger.error(f"ERROR, failed to download data for {year}: {e}")
+        return ""
+
+
+
+
+
 
 
 def refresh_data_for_new_year():
-    current_year = datetime.now().year
-    if f"{current_year}.csv" not in os.listdir(DATA_DIR):
+    if f"{datetime.now().year}.csv" not in os.listdir(DATA_DIR):
         try:
-            download_csv_and_write_to_file(current_year)
+            text: str = download_par_yield_csv(datetime.now().year)
+            with open(DATA_DIR / f"{year}.csv", "w") as f:
+                f.write(text)
+
         except Exception as e:
             logger.error("Error:", e)
 
 
-def get_stored_data(year):
+def get_stored_data(year: int) -> List[List[str]]:
     with open(DATA_DIR / f"{year}.csv", "r") as file:
         reader = csv.reader(file)
-        lines = [line for line in reader]  # small file, fine to read into memory
-    return lines
+        return list(reader)  # assumes small file, fine to read into memory
 
 
 def get_most_recent_year_with_data_stored():
@@ -71,4 +77,6 @@ def refresh_data_for_new_weekday(year):
     most_recent_day_with_data = f"20{year_str}{month_str}{day_str}"
     most_recent_weekday = get_most_recent_weekday().strftime("%Y%m%d")
     if most_recent_day_with_data != most_recent_weekday:
-        download_csv_and_write_to_file(year)
+        text: str = download_par_yield_csv(year)
+        with open(DATA_DIR / f"{year}.csv", "w") as f:
+            f.write(text)

@@ -1,11 +1,12 @@
 import dataclasses
 import sqlite3
 from utils import Order
+from typing import List
 
 DB_NAME = "treasury_rates.db"
 
 
-def get_orders_from_db():
+def read_db_orders() -> List[Order]:
     with sqlite3.connect(DB_NAME) as conn:
         cur = conn.cursor()
         cur.execute(
@@ -22,7 +23,7 @@ def get_orders_from_db():
         return [Order(*row) for row in res.fetchall()]
 
 
-def insert_order(conn, order):
+def insert_order(conn, order) -> None:
     cur = conn.cursor()
     insert_query = "INSERT INTO orders VALUES (?, ?, ?, ?)"
     cur.execute(insert_query, dataclasses.astuple(order))
