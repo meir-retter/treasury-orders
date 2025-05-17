@@ -69,8 +69,7 @@ def get_yield_histories_by_term() -> Dict[str, YieldHistory]:
                 yield_value = int(row[j].replace(".", "")) if row[j] else None
                 if yield_value is not None:
                     yield_histories_by_term[term].add_data_point(
-                        datetime.strptime(row_date, "%m/%d/%Y"),
-                        yield_value
+                        datetime.strptime(row_date, "%m/%d/%Y"), yield_value
                     )
     return yield_histories_by_term
 
@@ -84,7 +83,10 @@ def get_layout():
                 id="graph-1-store",
                 data=dataclasses.asdict(yield_curve),
             ),
-            dcc.Store(id="graph-2-store", data={k: v.to_dict() for k, v in yield_histories_by_term.items()}),
+            dcc.Store(
+                id="graph-2-store",
+                data={k: v.to_dict() for k, v in yield_histories_by_term.items()},
+            ),
             build_graphs_section(yield_curve),
             html.Br(),
             html.Label("Create order:", style=LABEL_STYLE),

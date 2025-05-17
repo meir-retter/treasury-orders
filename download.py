@@ -44,11 +44,6 @@ def download_par_yield_csv(year: int) -> str:
         return ""
 
 
-
-
-
-
-
 def refresh_data_for_new_year():
     if f"{datetime.now().year}.csv" not in os.listdir(DATA_DIR):
         try:
