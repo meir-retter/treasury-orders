@@ -3,48 +3,28 @@ import plotly.graph_objs as go
 from style import COMMON_STYLE, LABEL_STYLE, SMALL_LABEL_STYLE, BUTTON_STYLE
 
 from datetime import datetime
+from typing import NamedTuple, Dict
 
 from db import get_orders_from_db
+from utils import Order, YieldCurve
 
 
-def format_timestamp(ts_str):
-    try:
-        return datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S").strftime("%Y-%m-%d %H:%M")
-    except Exception:
-        return ts_str
-
-
-def make_human_readable(order):
-    return {
-        "trm": order["trm"],
-        "amt": f"${order['amt']:,.2f}" if order["amt"] is not None else "N/A",
-        "yld": f"{round(order['yld'], 2)}%" if order["yld"] is not None else "N/A",
-        "ts": format_timestamp(order["ts"]),
-    }
-
-
-def table_format(rows):
-    return [
-        make_human_readable({"trm": row[0], "amt": row[1], "yld": row[2], "ts": row[3]})
-        for row in rows
-    ]
-
-
-def create_yield_curve_graph(date_value, terms, yields):
+def create_yield_curve_graph(yield_curve: YieldCurve):
+    percent_yields = [y / 100 for y in yield_curve.yields]
     fig = go.Figure(data=[])
     fig.add_trace(
         go.Scatter(
-            x=terms,
-            y=yields,
+            x=yield_curve.terms,
+            y=percent_yields,
             mode="lines",
-            name=date_value,
+            name=yield_curve.date,
             line=dict(color="black"),
         )
     )
     fig.update_layout(
         xaxis_title="Maturity Term",
         yaxis_title="Yield",
-        title=f"Treasury Yield Curve {date_value}",
+        title=f"Treasury Yield Curve {yield_curve.date}",
         yaxis={"ticksuffix": "%"},
     )
     return fig
@@ -55,7 +35,7 @@ def create_term_yield_history_graph(term, all_data):
     fig.add_trace(
         go.Scatter(
             x=all_data[term]["dates"],
-            y=all_data[term]["yields"],
+            y=[yld / 100 for yld in all_data[term]["yields"]],
             mode="lines",
             name=term,
             line=dict(color="black"),
@@ -70,13 +50,13 @@ def create_term_yield_history_graph(term, all_data):
     return fig
 
 
-def build_graphs_section(date_value, terms, yields):
+def build_graphs_section(yield_curve: YieldCurve):
     return html.Div(
         [
             html.Div(
                 dcc.Graph(
                     id="graph",
-                    figure=create_yield_curve_graph(date_value, terms, yields),
+                    figure=create_yield_curve_graph(yield_curve),
                 ),
                 style={"width": "50%", "padding": "10px"},
             ),
@@ -85,9 +65,9 @@ def build_graphs_section(date_value, terms, yields):
                     dcc.Graph(id="term-yield-history-graph"),
                     dcc.Slider(
                         min=0,
-                        max=len(terms) - 1,
+                        max=len(yield_curve.terms) - 1,
                         step=None,
-                        marks={i: term for i, term in enumerate(terms)},
+                        marks={i: term for i, term in enumerate(yield_curve.terms)},
                         value=0,
                         id="term-yield-history-slider",
                         tooltip={"always_visible": False},
@@ -133,7 +113,7 @@ def build_place_order_section(terms):
                         id="amount-input",
                         type="number",
                         value=100.00,
-                        min=0,
+                        min=0.01,
                         max=10**6,
                         step=0.01,
                         style=COMMON_STYLE,
@@ -172,12 +152,12 @@ def build_orders_table_section():
     return dash_table.DataTable(
         id="table",
         columns=[
-            {"name": "Term", "id": "trm"},
-            {"name": "Amount", "id": "amt"},
-            {"name": "Yield", "id": "yld"},
-            {"name": "Order time", "id": "ts"},
+            {"name": "Term", "id": "term"},
+            {"name": "Amount", "id": "amount_cents"},
+            {"name": "Yield", "id": "yield_basis_points"},
+            {"name": "Order time", "id": "timestamp"},
         ],
-        data=table_format(get_orders_from_db()),
+        data=[order.to_table_row() for order in get_orders_from_db()],
         style_table={"maxWidth": "60vw", "overflowX": "auto"},
         style_cell={
             "textAlign": "left",
