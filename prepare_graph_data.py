@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Dict
+from typing import Dict, List, DefaultDict, Optional
 from collections import defaultdict
 import logging
 from datetime import datetime
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-@lru_cache(maxsize=1)
+# @lru_cache(maxsize=1)
 def prepare_current_yield_curve() -> YieldCurve:
     """
     - Prepares the data for the graph on the left
@@ -30,7 +30,7 @@ def prepare_current_yield_curve() -> YieldCurve:
     return YieldCurve(date_, terms, yields)
 
 
-@lru_cache(maxsize=1)
+# @lru_cache(maxsize=1)
 def prepare_historical_curves() -> Dict[Term, HistoricalCurve]:
     """
     - Prepares the data for the graph on the right
@@ -38,7 +38,7 @@ def prepare_historical_curves() -> Dict[Term, HistoricalCurve]:
     - - the keys are terms, e.g. "7 Yr"
     - - the values are yield timeseries from 1990 to present day
     """
-    histories = defaultdict(lambda: HistoricalCurve([], []))
+    historical_curves: DefaultDict[Term, HistoricalCurve] = defaultdict(lambda: HistoricalCurve([], []))
     current_year = datetime.now().year
     for year in range(1990, current_year + 1):
         if not csv_downloaded_for_year(year):
@@ -50,12 +50,12 @@ def prepare_historical_curves() -> Dict[Term, HistoricalCurve]:
             csv_rows[1:]
         ):  # reversed to get them in ascending date order
             row_date: str = row[0]
-            yield_values: List[int] = [
+            yield_values: List[Optional[int]] = [
                 (int(x.replace(".", "")) if x else None) for x in row[1:]
             ]
             for term, yield_value in zip(terms, yield_values):
                 if yield_value is not None:
-                    histories[term].add_data_point(
+                    historical_curves[term].add_data_point(
                         datetime.strptime(row_date, "%m/%d/%Y"), yield_value
                     )
-    return histories
+    return historical_curves

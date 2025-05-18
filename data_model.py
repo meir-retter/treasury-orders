@@ -46,11 +46,11 @@ class HistoricalCurve:
     - Used for the graph on the right
     """
 
-    def __init__(self, dates: List[str], yields: List[int]):
+    def __init__(self, dates: List[datetime], yields: List[int]):
         self.dates = dates
         self.yields = yields
 
-    def add_data_point(self, date_value: str, yield_value: int):
+    def add_data_point(self, date_value: datetime, yield_value: int):
         self.dates.append(date_value)
         self.yields.append(yield_value)
 
