@@ -1,15 +1,15 @@
 from dash import Dash, dash_table, dcc
-from dash.html import Div, Button, Label
-
+from dash.html import Div, Button, Label, Br
 import plotly.graph_objs as go
-
 from datetime import datetime
 from typing import NamedTuple, Dict, List
+import dataclasses
 
 from db import read_orders
 from data_model import Order, YieldCurve, HistoricalCurve
 from terms import MATURITY_TERMS, Term
 from style import COMMON_STYLE, LABEL_STYLE, SMALL_LABEL_STYLE, BUTTON_STYLE
+from prepare_graph_data import prepare_current_yield_curve, prepare_historical_curves
 
 
 def create_yield_curve_graph(yield_curve: YieldCurve) -> go.Figure:
@@ -56,6 +56,10 @@ def create_historical_curve_graph(
 
 
 def create_graphs_section(yield_curve: YieldCurve) -> Div:
+    """
+    - This section is the whole top part of the screen
+    - Its structure looks like [graph1, [graph2, slider]]
+    """
     return Div(
         [
             Div(
@@ -174,4 +178,34 @@ def create_orders_table_section():
         },
         editable=False,
         row_deletable=False,
+    )
+
+
+def create_app_layout() -> Div:
+    yield_curve = prepare_current_yield_curve()
+    historical_curves = prepare_historical_curves()
+
+    return Div(
+        [
+            dcc.Store(
+                id="yield-curve",
+                data=dataclasses.asdict(yield_curve),
+            ),
+            dcc.Store(
+                id="historical-curves",
+                data={
+                    term: historical_curve.to_dict()
+                    for term, historical_curve in historical_curves.items()
+                },
+            ),
+            create_graphs_section(yield_curve),  # both graphs and the slider
+            Br(),
+            Label("Create order:", style=LABEL_STYLE),
+            create_place_order_section(
+                yield_curve.terms
+            ),  # term dropdown, dollar amount input, button
+            Br(),
+            Label("Previous orders:", style=LABEL_STYLE),
+            create_orders_table_section(),
+        ]
     )

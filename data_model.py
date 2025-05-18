@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-
 from typing import Dict, Optional, List, Literal
+
 from terms import MATURITY_TERMS
+from utils import deci_string
 
 
 @dataclass
@@ -51,13 +52,3 @@ class HistoricalCurve:
     @staticmethod
     def from_dict(d: dict):
         return HistoricalCurve(dates=d["dates"], yields=d["yields"])
-
-
-def deci_string(n: int) -> str:
-    """
-    357 -> "3.57"
-    4562 -> "45.62"
-    89 -> "0.89"
-    100 -> 1.00
-    """
-    return f"{n // 100}.{str(n % 100).zfill(2)}"

@@ -4,7 +4,7 @@ from collections import defaultdict
 import logging
 from datetime import datetime
 
-from download import read_downloaded_csv, csv_downloaded_for_year, refresh_data
+from load_csv_data import read_downloaded_csv, csv_downloaded_for_year, refresh_data
 from data_model import YieldCurve, HistoricalCurve
 from terms import Term
 
