@@ -46,17 +46,12 @@ def get_current_yield_curve() -> YieldCurve:
 def get_term_histories() -> Dict[str, TermHistory]:
     term_histories = defaultdict(lambda: TermHistory([], []))
     for year in range(1990, 2026):
-        year_data = read_downloaded_csv(year)
-        cols = year_data[0]
-        for i in reversed(range(1, len(year_data))):
-            row = year_data[i]
+        csv_rows = read_downloaded_csv(year)
+        terms = [term.replace("onth", "o") for term in csv_rows[0][1:]]
+        for row in reversed(csv_rows[1:]):
             row_date = row[0]
-            for j in range(1, len(row)):
-                term = cols[j].replace("onth", "o")
-                if term not in MATURITY_TERMS:
-                    logging.error("Unrecognized term")
-                    raise ValueError("")
-                yield_value = int(row[j].replace(".", "")) if row[j] else None
+            yield_values = [(int(x.replace(".", "")) if x else None) for x in row[1:]]
+            for term, yield_value in zip(terms, yield_values):
                 if yield_value is not None:
                     term_histories[term].add_data_point(
                         datetime.strptime(row_date, "%m/%d/%Y"), yield_value
