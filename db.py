@@ -1,12 +1,13 @@
 import dataclasses
 import sqlite3
-from utils import Order
-from typing import List
+
+from data_model import Order
+from typing import List, Tuple
 
 DB_NAME = "treasury_rates.db"
 
 
-def read_db_orders() -> List[Order]:
+def read_orders() -> List[Tuple[str, int, int, str]]:
     with sqlite3.connect(DB_NAME) as conn:
         cur = conn.cursor()
         cur.execute(
@@ -20,10 +21,10 @@ def read_db_orders() -> List[Order]:
         res = cur.execute(
             "SELECT term, cents, yield_basis_points, timestamp FROM orders ORDER BY timestamp DESC"
         )
-        return [Order(*row) for row in res.fetchall()]
+        return res.fetchall()
 
 
-def insert_order(conn, order) -> None:
+def insert_order(conn: sqlite3.Connection, order: Order) -> None:
     cur = conn.cursor()
     insert_query = "INSERT INTO orders VALUES (?, ?, ?, ?)"
     cur.execute(insert_query, dataclasses.astuple(order))

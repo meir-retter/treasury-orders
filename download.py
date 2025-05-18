@@ -14,7 +14,7 @@ DATA_DIR = Path("./data")
 BASE_URL = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv"
 
 
-def ensure_data_dir():
+def ensure_data_dir() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -44,7 +44,7 @@ def download_csv(year: int) -> str:
         return ""
 
 
-def try_downloading_csv_for_current_year():
+def try_downloading_csv_for_current_year() -> None:
     try:
         text: str = download_csv(datetime.now().year)
         if text:
@@ -60,25 +60,29 @@ def read_downloaded_csv(year: int) -> List[List[str]]:
         return list(reader)  # assumes small file, fine to read into memory
 
 
-def get_most_recent_year_with_csv_downloaded():
+def get_most_recent_year_with_csv_downloaded() -> int:
     return max(int(filename.removesuffix(".csv")) for filename in os.listdir(DATA_DIR))
 
 
-def csv_row_exists_for_most_recent_weekday(current_business_year: int) -> bool:
-    data = read_downloaded_csv(current_business_year)
-    date_str = data[1][0]
-    month_str, day_str, year_str = date_str[:2], date_str[3:5], date_str[6:]
-    most_recent_day_with_data = f"{year_str}{month_str}{day_str}"
-    most_recent_weekday = get_most_recent_weekday().strftime("%Y%m%d")
-    return most_recent_day_with_data == most_recent_weekday
+def is_csv_row_present_for_most_recent_weekday(current_business_year: int) -> bool:
+    newest_csv: List[List[str]] = read_downloaded_csv(current_business_year)
+    newest_date_in_csv: str = newest_csv[1][0]
+    most_recent_weekday = get_most_recent_weekday().strftime("%m/%d/%Y")
+    return newest_date_in_csv == most_recent_weekday
 
 
-def get_yield_curve_data_for_this_year():
+def csv_downloaded_for_year(year: int) -> bool:
+    return f"{year}.csv" in os.listdir(DATA_DIR)
+
+
+def refresh_data() -> int:
+    """
+    - Checks current date versus the latest data downloaded
+    - Downloads newest data if needed
+    - Then returns the latest year for which data is downloaded
+    """
     current_year = datetime.now().year
-    csv_already_downloaded_for_current_year: bool = f"{current_year}.csv" in os.listdir(
-        DATA_DIR
-    )
-    if csv_already_downloaded_for_current_year:
+    if csv_downloaded_for_year(current_year):
         current_business_year = current_year
     else:
         try_downloading_csv_for_current_year()
@@ -87,8 +91,8 @@ def get_yield_curve_data_for_this_year():
         # but could be the previous year e.g. if right now it's Saturday Jan 1
         # TODO handle case where the app sits for a full year unused, leaving a data gap
         # would prefer to not download more often than needed because it's slow
-    if not csv_row_exists_for_most_recent_weekday(current_business_year):
+    if not is_csv_row_present_for_most_recent_weekday(current_business_year):
         new_csv: str = download_csv(current_business_year)
         with open(DATA_DIR / f"{current_business_year}.csv", "w") as f:
             f.write(new_csv)
-    return read_downloaded_csv(current_business_year)
+    return current_business_year

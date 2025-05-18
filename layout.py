@@ -1,15 +1,15 @@
 from dash import Dash, dash_table, dcc
 from dash.html import Div, Button, Label
+
 import plotly.graph_objs as go
-from style import COMMON_STYLE, LABEL_STYLE, SMALL_LABEL_STYLE, BUTTON_STYLE
 
 from datetime import datetime
 from typing import NamedTuple, Dict, List
 
 from db import read_orders
 from data_model import Order, YieldCurve, History
-
 from terms import MATURITY_TERMS, Term
+from style import COMMON_STYLE, LABEL_STYLE, SMALL_LABEL_STYLE, BUTTON_STYLE
 
 
 def create_yield_curve_graph(yield_curve: YieldCurve) -> go.Figure:
