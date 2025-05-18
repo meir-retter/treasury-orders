@@ -34,7 +34,6 @@ logger.setLevel(logging.INFO)
 @lru_cache(maxsize=1)
 def get_current_yield_curve() -> YieldCurve:
     data = get_yield_curve_data_for_this_year()
-    print(8)
     first_line, second_line = data[:2]
     terms = [col.replace("onth", "o") for col in first_line[1:]]
     date_value, yields = second_line[0], [
@@ -47,7 +46,6 @@ def get_current_yield_curve() -> YieldCurve:
 def get_term_histories() -> Dict[str, TermHistory]:
     term_histories = defaultdict(lambda: TermHistory([], []))
     for year in range(1990, 2026):
-        print(year)
         year_data = read_downloaded_csv(year)
         cols = year_data[0]
         for i in reversed(range(1, len(year_data))):
@@ -68,7 +66,6 @@ def get_term_histories() -> Dict[str, TermHistory]:
 
 def get_layout():
     yield_curve = get_current_yield_curve()
-    print(9)
     term_histories = get_term_histories()
     return html.Div(
         [
