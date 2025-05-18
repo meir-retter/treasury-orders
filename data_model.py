@@ -30,13 +30,21 @@ class Order:
 
 @dataclass
 class YieldCurve:
+    """
+    - Yield series by term, for one date
+    - Used for the graph on the left
+    """
+
     date: str  # formatted "MM/DD/YYYY"
     terms: List[str] = field(default_factory=list)
     yields: List[int] = field(default_factory=list)  # basis points
 
 
 class HistoricalCurve:
-    """Yield timeseries for a fixed maturity term"""
+    """
+    - Yield timeseries, for one maturity term
+    - Used for the graph on the right
+    """
 
     def __init__(self, dates: List[str], yields: List[int]):
         self.dates = dates

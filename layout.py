@@ -157,7 +157,7 @@ def create_place_order_section(terms: List[Term]) -> Div:
     )
 
 
-def create_orders_table_section():
+def create_orders_table_section() -> dash_table.DataTable:
     return dash_table.DataTable(
         id="table",
         columns=[
