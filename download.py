@@ -44,14 +44,19 @@ def download_csv(year: int) -> str:
         return ""
 
 
-def try_downloading_csv_for_current_year() -> None:
+def try_downloading_csv_for_current_year() -> bool:
+    did_download = False
+    current_year = datetime.now().year
     try:
-        text: str = download_csv(datetime.now().year)
+        text: str = download_csv(current_year)
         if text:
-            with open(DATA_DIR / f"{year}.csv", "w") as f:
+            logger.info(f"Downloaded csv for{datetime.now().year}")
+            with open(DATA_DIR / f"{current_year}.csv", "w") as f:
                 f.write(text)
+            did_download = True
     except Exception as e:
         logger.error("Error:", e)
+    return did_download
 
 
 def read_downloaded_csv(year: int) -> List[List[str]]:
@@ -67,7 +72,7 @@ def get_most_recent_year_with_csv_downloaded() -> int:
 def is_csv_row_present_for_most_recent_weekday(current_business_year: int) -> bool:
     newest_csv: List[List[str]] = read_downloaded_csv(current_business_year)
     newest_date_in_csv: str = newest_csv[1][0]
-    most_recent_weekday = get_most_recent_weekday().strftime("%m/%d/%Y")
+    most_recent_weekday: str = get_most_recent_weekday().strftime("%m/%d/%Y")
     return newest_date_in_csv == most_recent_weekday
 
 
@@ -85,7 +90,7 @@ def refresh_data() -> int:
     if csv_downloaded_for_year(current_year):
         current_business_year = current_year
     else:
-        try_downloading_csv_for_current_year()
+        _ = try_downloading_csv_for_current_year()
         current_business_year = get_most_recent_year_with_csv_downloaded()
         # current_business_year is usually the current year
         # but could be the previous year e.g. if right now it's Saturday Jan 1

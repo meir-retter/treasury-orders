@@ -2,9 +2,10 @@ from functools import lru_cache
 from typing import Dict
 from collections import defaultdict
 import logging
+from datetime import datetime
 
 from download import read_downloaded_csv, csv_downloaded_for_year, refresh_data
-from data_model import YieldCurve, History
+from data_model import YieldCurve, HistoricalCurve
 from terms import Term
 
 logger = logging.getLogger(__name__)
@@ -12,9 +13,9 @@ logger.setLevel(logging.INFO)
 
 
 @lru_cache(maxsize=1)
-def get_current_yield_curve() -> YieldCurve:
+def prepare_current_yield_curve() -> YieldCurve:
     """
-    - Gets the data for the graph on the left
+    - Prepares the data for the graph on the left
     - This is the most recent business day's yield curve
     """
     yield_curve_file_rows: List[List[str]] = read_downloaded_csv(refresh_data())
@@ -30,14 +31,14 @@ def get_current_yield_curve() -> YieldCurve:
 
 
 @lru_cache(maxsize=1)
-def get_histories() -> Dict[Term, History]:
+def prepare_historical_curves() -> Dict[Term, HistoricalCurve]:
     """
-    - Gets the data for the graph on the right
+    - Prepares the data for the graph on the right
     - Returns a dict
     - - the keys are terms, e.g. "7 Yr"
     - - the values are yield timeseries from 1990 to present day
     """
-    histories = defaultdict(lambda: History([], []))
+    histories = defaultdict(lambda: HistoricalCurve([], []))
     current_year = datetime.now().year
     for year in range(1990, current_year + 1):
         if not csv_downloaded_for_year(year):

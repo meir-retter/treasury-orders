@@ -10,12 +10,12 @@ import sqlite3
 
 from style import COMMON_STYLE, LABEL_STYLE, SMALL_LABEL_STYLE, BUTTON_STYLE
 from db import insert_order, DB_NAME
-from data_model import Order, History
+from data_model import Order, HistoricalCurve
 from terms import MATURITY_TERMS
-from prepare_graph_data import get_current_yield_curve, get_histories
+from prepare_graph_data import prepare_current_yield_curve, prepare_historical_curves
 from layout import (
     create_yield_curve_graph,
-    create_history_graph,
+    create_historical_curve_graph,
     create_graphs_section,
     create_place_order_section,
     create_orders_table_section,
@@ -23,8 +23,8 @@ from layout import (
 
 
 def create_app_layout() -> Div:
-    yield_curve = get_current_yield_curve()
-    histories = get_histories()
+    yield_curve = prepare_current_yield_curve()
+    historical_curves = prepare_historical_curves()
 
     return Div(
         [
@@ -33,8 +33,11 @@ def create_app_layout() -> Div:
                 data=dataclasses.asdict(yield_curve),
             ),
             dcc.Store(
-                id="term-histories",
-                data={term: history.to_dict() for term, history in histories.items()},
+                id="historical-curves",
+                data={
+                    term: historical_curve.to_dict()
+                    for term, historical_curve in historical_curves.items()
+                },
             ),
             create_graphs_section(yield_curve),
             Br(),
@@ -52,13 +55,15 @@ app.layout = create_app_layout
 
 
 @app.callback(
-    Output("term-yield-history-graph", "figure"),
-    Input("term-yield-history-slider", "value"),
-    State("term-histories", "data"),
+    Output("historical-curve-graph", "figure"),
+    Input("historical-curve-slider", "value"),
+    State("historical-curves", "data"),
 )
-def update_history_graph(slider_index: int, histories):
+def update_historical_curve_graph(slider_index: int, historical_curves):
     term = MATURITY_TERMS[slider_index]
-    return create_history_graph(term, History.from_dict(histories[term]))
+    return create_historical_curve_graph(
+        term, HistoricalCurve.from_dict(historical_curves[term])
+    )
 
 
 @app.callback(

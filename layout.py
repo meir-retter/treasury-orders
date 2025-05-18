@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import NamedTuple, Dict, List
 
 from db import read_orders
-from data_model import Order, YieldCurve, History
+from data_model import Order, YieldCurve, HistoricalCurve
 from terms import MATURITY_TERMS, Term
 from style import COMMON_STYLE, LABEL_STYLE, SMALL_LABEL_STYLE, BUTTON_STYLE
 
@@ -33,12 +33,14 @@ def create_yield_curve_graph(yield_curve: YieldCurve) -> go.Figure:
     return figure
 
 
-def create_history_graph(term: Term, history: History) -> go.Figure:
+def create_historical_curve_graph(
+    term: Term, historical_curve: HistoricalCurve
+) -> go.Figure:
     figure = go.Figure(data=[])
     figure.add_trace(
         go.Scatter(
-            x=history.dates,
-            y=[yld / 100 for yld in history.yields],
+            x=historical_curve.dates,
+            y=[yld / 100 for yld in historical_curve.yields],
             mode="lines",
             name=term,
             line=dict(color="black"),
@@ -65,14 +67,14 @@ def create_graphs_section(yield_curve: YieldCurve) -> Div:
             ),
             Div(
                 [
-                    dcc.Graph(id="term-yield-history-graph"),
+                    dcc.Graph(id="historical-curve-graph"),
                     dcc.Slider(
                         min=0,
                         max=len(yield_curve.terms) - 1,
                         step=None,
                         marks={i: term for i, term in enumerate(MATURITY_TERMS)},
                         value=0,
-                        id="term-yield-history-slider",
+                        id="historical-curve-slider",
                         tooltip={"always_visible": False},
                         updatemode="drag",
                         className="red-slider",

@@ -34,8 +34,8 @@ class YieldCurve:
     yields: List[int] = field(default_factory=list)  # basis points
 
 
-class History:
-    """Yield over time, when maturity term is held fixed"""
+class HistoricalCurve:
+    """Yield timeseries for a fixed maturity term"""
 
     def __init__(self, dates: List[str], yields: List[int]):
         self.dates = dates
@@ -50,7 +50,7 @@ class History:
 
     @staticmethod
     def from_dict(d: dict):
-        return History(dates=d["dates"], yields=d["yields"])
+        return HistoricalCurve(dates=d["dates"], yields=d["yields"])
 
 
 def deci_string(n: int) -> str:
