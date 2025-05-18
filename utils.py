@@ -32,7 +32,7 @@ class YieldCurve:
     yields: List[int] = field(default_factory=list)  # basis points
 
 
-class YieldHistory:
+class TermHistory:
     def __init__(self, dates: List[str], yields: List[int]):
         self.dates = dates
         self.yields = yields
@@ -46,7 +46,7 @@ class YieldHistory:
 
     @staticmethod
     def from_dict(d: dict):
-        return YieldHistory(dates=d["dates"], yields=d["yields"])
+        return TermHistory(dates=d["dates"], yields=d["yields"])
 
 
 def deci_string(n: int) -> str:

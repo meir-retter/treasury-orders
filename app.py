@@ -14,33 +14,27 @@ import sqlite3
 
 from style import COMMON_STYLE, LABEL_STYLE, SMALL_LABEL_STYLE, BUTTON_STYLE
 from db import insert_order, DB_NAME
-from download import (
-    refresh_data_for_new_year,
-    get_most_recent_year_with_data_stored,
-    refresh_data_for_new_weekday,
-    get_stored_data,
-)
+from download import get_yield_curve_data_for_this_year, read_downloaded_csv
 from build_layout import (
     create_yield_curve_graph,
-    create_term_yield_history_graph,
+    create_term_history_graph,
     build_graphs_section,
     build_place_order_section,
     build_orders_table_section,
 )
 
-from utils import Order, YieldCurve, YieldHistory, deci_string
+from utils import Order, YieldCurve, TermHistory, deci_string
+from constants import MATURITY_TERMS
+import logging
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 @lru_cache(maxsize=1)
 def get_current_yield_curve() -> YieldCurve:
-    refresh_data_for_new_year()
-
-    year_now: int = get_most_recent_year_with_data_stored()
-    # will usually be the current year, but could be the previous year e.g. if it's Saturday Jan 1
-
-    refresh_data_for_new_weekday(year_now)
-    data = get_stored_data(year_now)
-
+    data = get_yield_curve_data_for_this_year()
+    print(8)
     first_line, second_line = data[:2]
     terms = [col.replace("onth", "o") for col in first_line[1:]]
     date_value, yields = second_line[0], [
@@ -49,43 +43,42 @@ def get_current_yield_curve() -> YieldCurve:
     return YieldCurve(date_value, terms, yields)
 
 
-# from download import download_csv_and_write_to_file
-# for y in range(1990, 2025):
-#     download_csv_and_write_to_file(y)
-#     print(y, "done")
-
-
 @lru_cache(maxsize=1)
-def get_yield_histories_by_term() -> Dict[str, YieldHistory]:
-    yield_histories_by_term = defaultdict(lambda: YieldHistory([], []))
+def get_term_histories() -> Dict[str, TermHistory]:
+    term_histories = defaultdict(lambda: TermHistory([], []))
     for year in range(1990, 2026):
-        year_data = get_stored_data(year)
-        cols = [col.replace("onth", "o") for col in year_data[0]]
+        print(year)
+        year_data = read_downloaded_csv(year)
+        cols = year_data[0]
         for i in reversed(range(1, len(year_data))):
             row = year_data[i]
             row_date = row[0]
             for j in range(1, len(row)):
-                term = cols[j]
+                term = cols[j].replace("onth", "o")
+                if term not in MATURITY_TERMS:
+                    logging.error("Unrecognized term")
+                    raise ValueError("")
                 yield_value = int(row[j].replace(".", "")) if row[j] else None
                 if yield_value is not None:
-                    yield_histories_by_term[term].add_data_point(
+                    term_histories[term].add_data_point(
                         datetime.strptime(row_date, "%m/%d/%Y"), yield_value
                     )
-    return yield_histories_by_term
+    return term_histories
 
 
 def get_layout():
     yield_curve = get_current_yield_curve()
-    yield_histories_by_term = get_yield_histories_by_term()
+    print(9)
+    term_histories = get_term_histories()
     return html.Div(
         [
             dcc.Store(
-                id="graph-1-store",
+                id="yield-curve",
                 data=dataclasses.asdict(yield_curve),
             ),
             dcc.Store(
-                id="graph-2-store",
-                data={k: v.to_dict() for k, v in yield_histories_by_term.items()},
+                id="term-histories",
+                data={k: v.to_dict() for k, v in term_histories.items()},
             ),
             build_graphs_section(yield_curve),
             html.Br(),
@@ -105,14 +98,11 @@ app.layout = get_layout
 @app.callback(
     Output("term-yield-history-graph", "figure"),
     Input("term-yield-history-slider", "value"),
-    State("graph-1-store", "data"),
-    State("graph-2-store", "data"),
+    State("term-histories", "data"),
 )
-def update_term_history_graph(slider_index, extra_data1, extra_data2):
-    term = extra_data1["terms"][slider_index]
-    return create_term_yield_history_graph(
-        term, YieldHistory.from_dict(extra_data2[term])
-    )
+def update_term_history_graph(slider_index: int, term_histories):
+    term = MATURITY_TERMS[slider_index]
+    return create_term_history_graph(term, TermHistory.from_dict(term_histories[term]))
 
 
 @app.callback(
@@ -121,11 +111,11 @@ def update_term_history_graph(slider_index, extra_data1, extra_data2):
     State("term-dropdown", "value"),
     State("amount-input", "value"),
     State("table", "data"),
-    State("graph-1-store", "data"),
+    State("yield-curve", "data"),
 )
-def place_order(n_clicks, selected_term, amount_dollars, rows, extra_data1):
-    terms = extra_data1["terms"]
-    yields = extra_data1["yields"]
+def place_order(n_clicks, selected_term, amount_dollars, rows, yield_curve):
+    terms = yield_curve["terms"]
+    yields = yield_curve["yields"]
     if n_clicks > 0 and selected_term in terms:
         try:
             idx = terms.index(selected_term)
