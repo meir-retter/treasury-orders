@@ -26,6 +26,8 @@ Notes:
   3. Suggesting a potential name for this app -- my favorite was "YieldStation".
 
 Potential improvements:
+
+- Add more tests, put all test_*.py in a tests/ directory. Organize other *.py files in a src/ directory
 - Add an auto-incrementing id column to the db table. Timestamp with per-second-granularity is not actually a good way to identify and sort the rows (there could be two orders within the same second that would result in identical-looking rows)
 - Show the current yield curve against other dates' yield curves
 - Show the projected value of the user's orders after they get their money back (factoring in payments and the yield rate)
