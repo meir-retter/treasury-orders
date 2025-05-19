@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-# @lru_cache(maxsize=1)
+@lru_cache(maxsize=1)
 def prepare_current_yield_curve() -> YieldCurve:
     """
     - Prepares the data for the graph on the left
@@ -30,7 +30,7 @@ def prepare_current_yield_curve() -> YieldCurve:
     return YieldCurve(date_, terms, yields)
 
 
-# @lru_cache(maxsize=1)
+@lru_cache(maxsize=1)
 def prepare_historical_curves() -> Dict[Term, HistoricalCurve]:
     """
     - Prepares the data for the graph on the right
