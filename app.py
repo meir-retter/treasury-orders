@@ -5,7 +5,7 @@ from callbacks import register_callbacks
 
 
 app = Dash(__name__)
-app.layout = create_app_layout()
+app.layout = create_app_layout
 
 register_callbacks(app)
 
