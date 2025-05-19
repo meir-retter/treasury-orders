@@ -7,7 +7,7 @@ from typing import List, Tuple
 DB_NAME = "treasury_rates.db"
 
 
-def read_orders() -> List[Tuple[str, int, int, str]]:
+def init_db() -> None:
     with sqlite3.connect(DB_NAME) as conn:
         cur = conn.cursor()
         cur.execute(
@@ -18,10 +18,15 @@ def read_orders() -> List[Tuple[str, int, int, str]]:
                 timestamp TEXT
             )"""
         )
+
+
+def read_orders() -> List[Order]:
+    with sqlite3.connect(DB_NAME) as conn:
+        cur = conn.cursor()
         res = cur.execute(
             "SELECT term, cents, yield_basis_points, timestamp FROM orders ORDER BY timestamp DESC"
         )
-        return res.fetchall()
+        return [Order(*db_row) for db_row in res.fetchall()]
 
 
 def insert_order(conn: sqlite3.Connection, order: Order) -> None:

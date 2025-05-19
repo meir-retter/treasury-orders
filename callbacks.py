@@ -9,6 +9,21 @@ from terms import MATURITY_TERMS, Term
 from layout import create_historical_curve_graph
 
 
+def create_new_order(
+    yield_curve: Dict[str, Any], selected_term: Term, amount_dollars: float
+) -> Order:
+    index: int = yield_curve["terms"].index(selected_term)
+    yield_for_selected_term: int = yield_curve["yields"][index]
+
+    order = Order(
+        term=selected_term,
+        amount_cents=int(round(amount_dollars * 100)),
+        yield_basis_points=yield_for_selected_term,
+        timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    )
+    return order
+
+
 def register_callbacks(app):
     @app.callback(
         Output("historical-curve-graph", "figure"),
@@ -43,15 +58,7 @@ def register_callbacks(app):
         # but, it will use a float if it's placed with 55.01
         # in any case, we are going to immediately multiply by 100, round, and cast to int for the number of cents
         if n_clicks > 0 and selected_term in yield_curve["terms"]:
-            index: int = yield_curve["terms"].index(selected_term)
-            yield_for_selected_term: int = yield_curve["yields"][index]
-
-            order = Order(
-                term=selected_term,
-                amount_cents=int(round(amount_dollars * 100)),
-                yield_basis_points=yield_for_selected_term,
-                timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            )
+            order: Order = create_new_order(yield_curve, selected_term, amount_dollars)
             table_rows.insert(0, order.to_table_row())
 
             # global conn doesn't work within dash component thread

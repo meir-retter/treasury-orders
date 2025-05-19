@@ -38,7 +38,9 @@ def prepare_historical_curves() -> Dict[Term, HistoricalCurve]:
     - - the keys are terms, e.g. "7 Yr"
     - - the values are yield timeseries from 1990 to present day
     """
-    historical_curves: DefaultDict[Term, HistoricalCurve] = defaultdict(lambda: HistoricalCurve([], []))
+    historical_curves: DefaultDict[Term, HistoricalCurve] = defaultdict(
+        lambda: HistoricalCurve([], [])
+    )
     current_year = datetime.now().year
     for year in range(1990, current_year + 1):
         if not csv_downloaded_for_year(year):

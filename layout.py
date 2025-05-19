@@ -166,7 +166,7 @@ def create_orders_table_section() -> dash_table.DataTable:
             {"name": "Yield", "id": "yield_basis_points"},
             {"name": "Order time", "id": "timestamp"},
         ],
-        data=[Order(*db_row).to_table_row() for db_row in read_orders()],
+        data=[order.to_table_row() for order in read_orders()],
         style_table={"maxWidth": "60vw", "overflowX": "auto"},
         style_cell={
             "textAlign": "left",
