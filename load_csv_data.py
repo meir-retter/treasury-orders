@@ -44,13 +44,6 @@ def download_csv(year: int) -> str:
         return ""
 
 
-def try_downloading_csv_for_current_year():
-    text: str = ""
-    current_year = datetime.now().year
-
-    return text
-
-
 def write_year_csv(csv_file_text: str, year: int):
     try:
         with open(DATA_DIR / f"{year}.csv", "w") as f:
