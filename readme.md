@@ -18,6 +18,7 @@ Open `http://0.0.0.0:8279/` in a browser. The app may take 10-15 seconds to load
 
 Notes:
 - The app uses sqlite to persist the user's orders. Sqlite is lightweight and suitable for a single user in an app like this, but if this was a production app hosted online and there were multiple users, it would be best to use something like Postgres instead. Also, usernames would need to be tracked per order, and authentication / a login system would be needed, etc.
+- Mypy was used to check type safety. This could be added to the CI pipeline if this app was used in production 
 - All the historical yield data is read from files every time. These files are stored in the repo along with the code. This is okay because their small size means it's very quick to read and doesn't take up much space
 - I used GPT for
   1. speeding up bugfixing
