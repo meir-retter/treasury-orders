@@ -24,10 +24,12 @@ Notes:
   1. speeding up bugfixing
   2. Plotly Dash aesthetic improvement (css styling, getting the components aligned etc)
   3. Suggesting a potential name for this app -- my favorite was "YieldStation".
+  4. generating a starting point for test_load_csv_data.py
 
 Potential improvements:
 
-- Add more tests, put all test_*.py in a tests/ directory. Organize other *.py files in a src/ directory
+- **Add more tests!** Could also put tests in a tests/ directory and the other *.py files in a src/ directory to clean up the top level
+- Add Mypy and pytest to the CI pipeline being used to deploy the app, so they will always be run upon any new changes
 - Add an auto-incrementing id column to the db table. Timestamp with per-second-granularity is not actually a good way to identify and sort the rows (there could be two orders within the same second that would result in identical-looking rows)
 - Show the current yield curve against other dates' yield curves
 - Show the projected value of the user's orders after they get their money back (factoring in payments and the yield rate)
